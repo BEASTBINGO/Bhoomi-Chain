@@ -1,0 +1,211 @@
+const fs = require("fs");
+const mongoose = require("mongoose");
+const PropertyDocument = require("../models/PropertyDocument");
+const Property = require("../models/Property");
+
+const ALLOWED_DOCUMENT_TYPES = [
+  "SALE_DEED",
+  "7_12_EXTRACT",
+  "PROPERTY_CARD",
+  "REGISTRATION_DOCUMENT",
+  "TAX_RECEIPT",
+  "IDENTITY_PROOF",
+  "ADDRESS_PROOF",
+  "OTHER",
+];
+
+const cleanupFile = (filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (err) {
+      console.error("Failed to clean up file:", err.message);
+    }
+  }
+};
+
+const uploadDocument = async (req, res) => {
+  try {
+    const { propertyId, documentType } = req.body || {};
+
+    if (!propertyId || !documentType) {
+      if (req.file) cleanupFile(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: "propertyId and documentType are required",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Document file is required",
+      });
+    }
+
+    if (!ALLOWED_DOCUMENT_TYPES.includes(documentType)) {
+      cleanupFile(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: `Invalid documentType '${documentType}'. Allowed types: ${ALLOWED_DOCUMENT_TYPES.join(", ")}`,
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+      cleanupFile(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid propertyId format",
+      });
+    }
+
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      cleanupFile(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+    // Only the current owner can upload documents
+    if (property.currentOwner.toString() !== req.user.userId) {
+      cleanupFile(req.file.path);
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to upload documents for this property",
+      });
+    }
+
+    const document = await PropertyDocument.create({
+      property: property._id,
+      uploadedBy: req.user.userId,
+      documentType,
+      fileName: req.file.originalname,
+      filePath: req.file.path,
+
+      aiStatus: "PENDING",
+      governmentStatus: "PENDING",
+
+      remarks: "Document uploaded and waiting for analysis",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Document uploaded successfully",
+      document,
+    });
+  } catch (error) {
+    if (req.file) cleanupFile(req.file.path);
+    console.error("Document upload error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload document",
+      error: error.message,
+    });
+  }
+};
+
+const getDocumentsByProperty = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid propertyId format",
+      });
+    }
+
+    const documents = await PropertyDocument.find({ property: propertyId })
+      .populate("uploadedBy", "fullName bcid mobile")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: documents.length,
+      documents,
+    });
+  } catch (error) {
+    console.error("Get property documents error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch property documents",
+      error: error.message,
+    });
+  }
+};
+
+const getDocumentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document id format",
+      });
+    }
+
+    const document = await PropertyDocument.findById(id)
+      .populate("property")
+      .populate("uploadedBy", "fullName bcid mobile");
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      document,
+    });
+  } catch (error) {
+    console.error("Get document error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch document",
+      error: error.message,
+    });
+  }
+};
+
+const analyzePropertyDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document id format",
+      });
+    }
+
+    const { analyzeDocument } = require("../services/documentAnalysisService");
+    const result = await analyzeDocument(id, req.user);
+
+    res.json({
+      success: true,
+      message: "Document analyzed successfully",
+      analysis: result,
+    });
+  } catch (error) {
+    console.error("Document analysis error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Document analysis failed",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  uploadDocument,
+  getDocumentsByProperty,
+  getDocumentById,
+  analyzePropertyDocument,
+};

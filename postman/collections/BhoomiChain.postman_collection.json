@@ -1,0 +1,742 @@
+{
+  "info": {
+    "_postman_id": "bhoomichain-api-collection",
+    "name": "BhoomiChain API Suite",
+    "description": "Complete BhoomiChain API collection covering Citizen Authentication, Property Registration, Document Upload, AI Document Analysis, Government Registrar Verification, and Simulated Blockchain Ledger.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "citizenToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrarToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "propertyId",
+      "value": "6ac69c7242ceb1adddcb5824",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transferId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Citizen Authentication",
+      "item": [
+        {
+          "name": "Citizen Login (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.token) {",
+                  "    pm.collectionVariables.set('citizenToken', response.token);",
+                  "    console.log('Saved citizenToken:', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bcid\": \"BCID-IND-2026-000001\",\n  \"mobile\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/citizens/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "citizens", "login"]
+            }
+          }
+        },
+        {
+          "name": "Citizen Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/citizens/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "citizens", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Property Management",
+      "item": [
+        {
+          "name": "Register Property",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surveyNumber\": \"SUR-1024\",\n  \"propertyType\": \"RESIDENTIAL_LAND\",\n  \"address\": \"Virar West\",\n  \"village\": \"Virar\",\n  \"taluka\": \"Vasai\",\n  \"district\": \"Palghar\",\n  \"state\": \"Maharashtra\",\n  \"pincode\": \"401303\",\n  \"area\": 1200,\n  \"areaUnit\": \"sq.ft\",\n  \"description\": \"Demo land parcel for BhoomiChain prototype\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties"]
+            }
+          }
+        },
+        {
+          "name": "My Properties",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "my"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Ownership History Graph",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/{{propertyId}}/ownership-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "{{propertyId}}", "ownership-history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Document Upload & AI Analysis",
+      "item": [
+        {
+          "name": "Upload Document (form-data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.document) {",
+                  "    pm.collectionVariables.set('documentId', response.document._id);",
+                  "    console.log('Saved documentId:', response.document._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "propertyId",
+                  "value": "{{propertyId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "documentType",
+                  "value": "SALE_DEED",
+                  "type": "text"
+                },
+                {
+                  "key": "document",
+                  "description": "Select real_property_document.pdf or suspicious_property_document.pdf",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get Documents for Property",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/property/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "property", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Run AI / OCR Document Analysis",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "analyze"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Government Registrar Portal",
+      "item": [
+        {
+          "name": "Registrar Login (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.token) {",
+                  "    pm.collectionVariables.set('registrarToken', response.token);",
+                  "    console.log('Saved registrarToken:', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bcid\": \"BCID-REG-2026-000001\",\n  \"mobile\": \"9800000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/citizens/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "citizens", "login"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Dashboard Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/dashboard-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "dashboard-stats"]
+            }
+          }
+        },
+        {
+          "name": "Pending Properties Queue",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/properties/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "properties", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Review Property & Document Inspection",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Approve Property (Record in Ledger)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVE\",\n  \"remarks\": \"Physical and OCR validation completed. Authenticated by Sub-Registrar.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/government/properties/{{propertyId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "properties", "{{propertyId}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Get Blockchain Ledger",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/ledger",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "ledger"]
+            }
+          }
+        },
+        {
+          "name": "Verify Blockchain Ledger Hash-Chain",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/ledger/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "ledger", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Government Audit Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/government/audit-logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "government", "audit-logs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Property Transfer Lifecycle",
+      "item": [
+        {
+          "name": "1. Registrar Initiates Transfer Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.transferRequest) {",
+                  "    pm.collectionVariables.set('transferId', response.transferRequest._id);",
+                  "    console.log('Saved transferId:', response.transferRequest._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"{{propertyId}}\",\n  \"buyerBcid\": \"BCID-IND-2026-000002\",\n  \"agreedAmount\": 4500000,\n  \"transferType\": \"SALE\",\n  \"remarks\": \"Sale agreement executed between seller and buyer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers"]
+            }
+          }
+        },
+        {
+          "name": "2. Citizen View My Transfers",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "my"]
+            }
+          }
+        },
+        {
+          "name": "3. Seller Digital Verification (Accept)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"ACCEPT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/{{transferId}}/seller-verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "{{transferId}}", "seller-verify"]
+            }
+          }
+        },
+        {
+          "name": "4. Buyer Digital Verification (Accept)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"ACCEPT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/{{transferId}}/buyer-verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "{{transferId}}", "buyer-verify"]
+            }
+          }
+        },
+        {
+          "name": "5. Buyer Submits Payment Proof",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{citizenToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentReference\": \"UPI-UTR-9821873192\",\n  \"paymentMode\": \"UPI\",\n  \"amount\": 4500000,\n  \"remarks\": \"Transferred full agreed amount via UPI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/{{transferId}}/payment-proof",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "{{transferId}}", "payment-proof"]
+            }
+          }
+        },
+        {
+          "name": "6. Registrar Pending Transfer Queue",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/pending-government",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "pending-government"]
+            }
+          }
+        },
+        {
+          "name": "7. Registrar Final Transfer Approval (Record in Ledger)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registrarToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVE\",\n  \"remarks\": \"Verified buyer and seller signatures and payment settlement. Ownership transferred.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers/{{transferId}}/government-decision",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfers", "{{transferId}}", "government-decision"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
