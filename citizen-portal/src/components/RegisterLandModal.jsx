@@ -50,6 +50,22 @@ export default function RegisterLandModal({ isOpen, onClose, onPropertyCreated }
     }
   };
 
+  const fillSunitaRaneLand = () => {
+    setFormData({
+      surveyNumber: 'SUR-1042',
+      propertyType: 'RESIDENTIAL_LAND',
+      address: 'Survey No. 1042, Village Ogalewadi, Taluka Karad, District Satara, Maharashtra',
+      village: 'Ogalewadi',
+      taluka: 'Karad',
+      district: 'Satara',
+      state: 'Maharashtra',
+      pincode: '415105',
+      area: '1961',
+      areaUnit: 'sq.ft',
+      description: 'Residential NA plot under GAT-183/B. Clean title with revenue assessment clearance (Gov Seal: REV-MH-SAT-001042).',
+    });
+  };
+
   return (
     <div className="modal-backdrop">
       <div className="modal-dialog modal-dialog-wide">
@@ -72,6 +88,30 @@ export default function RegisterLandModal({ isOpen, onClose, onPropertyCreated }
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
+              <button
+                type="button"
+                onClick={fillSunitaRaneLand}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'linear-gradient(135deg, #0a192f, #1e3a8a)',
+                  color: '#ffffff',
+                  border: '1px solid var(--gov-gold)',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(10, 25, 47, 0.2)',
+                }}
+                title="1-Click Fill: Sunita Rane Land (SUR-1042 / Satara)"
+              >
+                <PlusCircle size={14} color="var(--gov-gold)" />
+                <span>⚡ 1-Click Fill: Sunita Rane Land (SUR-1042)</span>
+              </button>
+            </div>
             {error && (
               <div
                 style={{

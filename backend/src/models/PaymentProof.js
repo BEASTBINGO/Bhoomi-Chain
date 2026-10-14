@@ -16,7 +16,9 @@ const paymentProofSchema = new mongoose.Schema(
     paymentMode: {
       type: String,
       enum: [
+        "BANK_TRANSFER",
         "UPI",
+        "CHEQUE_DD",
         "NET_BANKING",
         "DEBIT_CARD",
         "CREDIT_CARD",

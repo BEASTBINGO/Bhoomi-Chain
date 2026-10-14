@@ -572,6 +572,8 @@ const submitPaymentProof = async (req, res) => {
     const { id } = req.params;
     const { paymentReference, paymentMode, amount, bankName, remarks } = req.body;
 
+    const currentUserId = String(req.user.userId || req.user.id || req.user._id);
+
     if (!paymentReference || !paymentMode || !amount) {
       return res.status(400).json({
         success: false,
@@ -594,24 +596,28 @@ const submitPaymentProof = async (req, res) => {
       });
     }
 
-    if (transfer.buyer.toString() !== req.user.userId) {
+    const buyerId = String(transfer.buyer?._id || transfer.buyer);
+    if (buyerId !== currentUserId) {
       return res.status(403).json({
         success: false,
-        message: "Only the buyer can submit payment proof for this transfer",
+        message: "Only the designated buyer can submit payment proof for this transfer",
       });
     }
 
     if (transfer.status !== "PAYMENT_PENDING") {
       return res.status(400).json({
         success: false,
-        message: `Payment can only be submitted when status is PAYMENT_PENDING. Current: '${transfer.status}'`,
+        message: `Payment can only be submitted when status is PAYMENT_PENDING. Current status: '${transfer.status}'. Both seller and buyer must first complete their BhoomiCard security confirmation.`,
       });
     }
+
+    const validModes = ["BANK_TRANSFER", "UPI", "CHEQUE_DD", "NET_BANKING", "NEFT", "RTGS", "OTHER"];
+    const normalizedMode = validModes.includes(paymentMode) ? paymentMode : "BANK_TRANSFER";
 
     const proof = await PaymentProof.create({
       transferRequest: transfer._id,
       paymentReference,
-      paymentMode,
+      paymentMode: normalizedMode,
       amount: Number(amount),
       paymentDate: new Date(),
       verificationStatus: "PENDING",

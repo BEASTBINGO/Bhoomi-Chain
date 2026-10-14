@@ -80,6 +80,30 @@ export default function CitizenAuthPage({ onLoginSuccess }) {
     setRegError('');
   };
 
+  // 1-Click quick information fill up for Sunita Rane (Satara - SUR-1042)
+  const fillSunitaRaneRegistration = () => {
+    setRegForm({
+      fullName: 'Sunita Rane',
+      dob: '1984-08-22',
+      gender: 'FEMALE',
+      fatherName: 'Anantrao Rane',
+      motherName: 'Laxmibai Rane',
+      mobile: '9879807070',
+      email: 'sunita.rane@example.in',
+      aadhaarNumber: '6762 1336 1019',
+      panNumber: 'ARQPR8841K',
+      occupation: 'AGRICULTURE',
+      address: 'Survey No. 1042, Village Ogalewadi, Taluka Karad, District Satara, Maharashtra',
+      village: 'Ogalewadi',
+      taluka: 'Karad',
+      district: 'Satara',
+      state: 'Maharashtra',
+      pincode: '415105',
+      agreedToTerms: true,
+    });
+    setRegError('');
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -509,27 +533,53 @@ export default function CitizenAuthPage({ onLoginSuccess }) {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={fillSampleRegistration}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'var(--saffron-50)',
-                    color: 'var(--saffron-600)',
-                    border: '1px solid var(--saffron-100)',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    fontSize: '0.76rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                  title="Auto-fill sample citizen profile for quick viva presentation"
-                >
-                  <Sparkles size={14} />
-                  <span>Auto-Fill Sample Citizen</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={fillSunitaRaneRegistration}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'linear-gradient(135deg, #0a192f, #1e3a8a)',
+                      color: '#ffffff',
+                      border: '1px solid var(--gov-gold)',
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(10, 25, 47, 0.25)',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title="1-Click Auto-Fill official profile of Sunita Rane (Satara - SUR-1042) for demonstration"
+                  >
+                    <Sparkles size={14} color="var(--gov-gold)" />
+                    <span>⚡ 1-Click Fill: Sunita Rane (Satara)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={fillSampleRegistration}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'var(--saffron-50)',
+                      color: 'var(--saffron-600)',
+                      border: '1px solid var(--saffron-100)',
+                      padding: '7px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                    title="Auto-fill sample citizen profile for quick viva presentation"
+                  >
+                    <Sparkles size={14} />
+                    <span>Sample Citizen</span>
+                  </button>
+                </div>
               </div>
 
               {regError && (

@@ -75,33 +75,43 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
   };
 
   const getPaymentForm = (transfer) => {
-    return (
-      paymentFormState[transfer._id] || {
-        paymentMode: 'BANK_TRANSFER',
-        paymentReference: `NEFT-SBI-${Math.floor(10000000 + Math.random() * 90000000)}`,
-        bankName: 'State Bank of India',
-        amount: transfer.agreedAmount || '',
-        remarks: 'Direct RTGS settlement for property deed registration',
-      }
-    );
+    const existing = paymentFormState[transfer._id];
+    return {
+      paymentMode: existing?.paymentMode || 'BANK_TRANSFER',
+      paymentReference:
+        existing?.paymentReference !== undefined
+          ? existing.paymentReference
+          : `RTGS-BARB-${String(transfer._id || '9821').slice(-6).toUpperCase()}`,
+      bankName: existing?.bankName || 'Bank of Baroda',
+      amount:
+        existing?.amount !== undefined && existing?.amount !== ''
+          ? existing.amount
+          : (transfer.agreedAmount || ''),
+      remarks:
+        existing?.remarks !== undefined
+          ? existing.remarks
+          : 'Direct Bank-to-Bank Escrow settlement for property deed registration',
+    };
   };
 
-  const updatePaymentForm = (transferId, field, value) => {
+  const updatePaymentForm = (transfer, field, value) => {
+    const current = getPaymentForm(transfer);
     setPaymentFormState((prev) => ({
       ...prev,
-      [transferId]: {
-        ...(prev[transferId] || {}),
+      [transfer._id]: {
+        ...current,
         [field]: value,
       },
     }));
   };
 
   const autofillBankPayment = (transfer) => {
+    const refNum = `RTGS-BARB-${String(transfer._id || '').slice(-4)}${Math.floor(100000 + Math.random() * 900000)}`;
     setPaymentFormState((prev) => ({
       ...prev,
       [transfer._id]: {
         paymentMode: 'BANK_TRANSFER',
-        paymentReference: `RTGS-BARB-${Math.floor(100000000 + Math.random() * 900000000)}`,
+        paymentReference: refNum,
         bankName: 'Bank of Baroda',
         amount: transfer.agreedAmount || '',
         remarks: 'Official Bank-to-Bank Transfer settlement via Sub-Registrar Escrow',
@@ -196,20 +206,30 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
       return;
     }
 
+    if (!form.paymentReference || !form.bankName || !form.amount) {
+      setErrorMessage('Payment Reference / UTR, Bank Name, and Amount are all required.');
+      setActionLoadingId(null);
+      return;
+    }
+
     try {
       const res = await submitPaymentProof(transfer._id, {
-        ...form,
+        paymentMode: form.paymentMode,
+        paymentReference: String(form.paymentReference).trim(),
+        bankName: String(form.bankName).trim(),
         amount: Number(form.amount || transfer.agreedAmount),
+        remarks: form.remarks || 'Settlement completed',
       });
 
       if (res.success) {
-        setStatusMessage('✅ Official Payment Proof recorded. Submitted for Sub-Registrar Review & Ledger Sealing.');
+        setStatusMessage('✅ Official Payment Proof recorded! Submitted for Sub-Registrar Review & Ledger Sealing.');
         await onRefreshTransfers();
       } else {
         setErrorMessage(res.message || 'Payment submission failed');
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || 'Payment submission error');
+      console.error('Payment submission failed:', err);
+      setErrorMessage(err.response?.data?.message || err.message || 'Payment submission error');
     } finally {
       setActionLoadingId(null);
     }
@@ -800,7 +820,7 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
                               <select
                                 className="form-control"
                                 value={getPaymentForm(t).paymentMode}
-                                onChange={(e) => updatePaymentForm(t._id, 'paymentMode', e.target.value)}
+                                onChange={(e) => updatePaymentForm(t, 'paymentMode', e.target.value)}
                                 style={{ fontSize: '0.85rem' }}
                               >
                                 <option value="BANK_TRANSFER">Bank-to-Bank (NEFT / RTGS / IMPS)</option>
@@ -817,7 +837,7 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
                                 type="text"
                                 className="form-control"
                                 value={getPaymentForm(t).paymentReference}
-                                onChange={(e) => updatePaymentForm(t._id, 'paymentReference', e.target.value)}
+                                onChange={(e) => updatePaymentForm(t, 'paymentReference', e.target.value)}
                                 placeholder="e.g. RTGS-SBIN-98129841"
                                 required
                                 style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}
@@ -832,7 +852,7 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
                                 type="text"
                                 className="form-control"
                                 value={getPaymentForm(t).bankName}
-                                onChange={(e) => updatePaymentForm(t._id, 'bankName', e.target.value)}
+                                onChange={(e) => updatePaymentForm(t, 'bankName', e.target.value)}
                                 placeholder="e.g. State Bank of India"
                                 required
                                 style={{ fontSize: '0.85rem' }}
@@ -847,7 +867,7 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
                                 type="number"
                                 className="form-control"
                                 value={getPaymentForm(t).amount}
-                                onChange={(e) => updatePaymentForm(t._id, 'amount', e.target.value)}
+                                onChange={(e) => updatePaymentForm(t, 'amount', e.target.value)}
                                 required
                                 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--gov-green-700)' }}
                               />
@@ -862,21 +882,34 @@ export default function TransfersHub({ transfers = [], currentCitizen, onRefresh
                               type="text"
                               className="form-control"
                               value={getPaymentForm(t).remarks}
-                              onChange={(e) => updatePaymentForm(t._id, 'remarks', e.target.value)}
+                              onChange={(e) => updatePaymentForm(t, 'remarks', e.target.value)}
                               placeholder="e.g. Full settlement via RTGS account transfer"
                               style={{ fontSize: '0.85rem' }}
                             />
                           </div>
+
+                          {errorMessage && (
+                            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <AlertCircle size={16} />
+                              <span>{errorMessage}</span>
+                            </div>
+                          )}
+                          {statusMessage && (
+                            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <CheckCircle2 size={16} />
+                              <span>{statusMessage}</span>
+                            </div>
+                          )}
 
                           <button
                             type="button"
                             onClick={() => handlePaymentSubmit(t)}
                             disabled={actionLoadingId === t._id}
                             className="btn-gov-success"
-                            style={{ padding: '10px 22px', fontSize: '0.9rem' }}
+                            style={{ padding: '10px 22px', fontSize: '0.9rem', cursor: actionLoadingId === t._id ? 'not-allowed' : 'pointer' }}
                           >
                             <CreditCard size={16} />
-                            <span>Submit Non-Cash Payment Details</span>
+                            <span>{actionLoadingId === t._id ? 'Recording Payment...' : 'Submit Non-Cash Payment Details'}</span>
                           </button>
                         </div>
                       ) : null}
