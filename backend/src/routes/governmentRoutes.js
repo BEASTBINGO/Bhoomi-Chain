@@ -14,6 +14,7 @@ const {
   getCitizenProperties,
   getMasterRecords,
   checkMasterDatabase,
+  autoCheckAndVerifyRegistration,
 } = require("../controllers/governmentController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -42,5 +43,6 @@ router.get("/lookup-citizen/:bcid", lookupCitizen);
 router.get("/citizen-properties/:bcid", getCitizenProperties);
 router.get("/master-records", getMasterRecords);
 router.post("/check-master-database", checkMasterDatabase);
+router.post("/auto-check-registration", autoCheckAndVerifyRegistration);
 
 module.exports = router;

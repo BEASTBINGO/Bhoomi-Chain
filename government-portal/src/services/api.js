@@ -47,6 +47,11 @@ export const checkMasterDatabase = async (data) => {
   return res.data;
 };
 
+export const autoCheckRegistration = async (propertyId) => {
+  const res = await api.post('/government/auto-check-registration', { propertyId });
+  return res.data;
+};
+
 // ─── Dashboard ─────────────────────────────────────────────────────────────
 export const getDashboardStats = async () => {
   const res = await api.get('/government/dashboard-stats');

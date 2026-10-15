@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   ArrowUpRight,
   FileCheck,
+  Lock,
+  XCircle,
 } from 'lucide-react';
 
 export default function Dashboard({
@@ -23,7 +25,7 @@ export default function Dashboard({
   onSwitchTab,
 }) {
   const verifiedCount = properties.filter((p) => p.verificationStatus === 'VERIFIED').length;
-  const pendingCount = properties.filter((p) => p.verificationStatus === 'PENDING').length;
+  const inVerificationCount = properties.filter((p) => p.verificationStatus !== 'VERIFIED').length;
   const pendingTransfersCount = transfers.filter(
     (t) =>
       t.status === 'SELLER_VERIFICATION_PENDING' ||
@@ -41,6 +43,16 @@ export default function Dashboard({
           <p>Real-time records from BhoomiChain Government Registrar Prototype Database</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          {inVerificationCount > 0 && (
+            <button
+              onClick={() => onSwitchTab('verification')}
+              className="btn-gov-outline"
+              style={{ fontSize: '0.82rem', borderColor: '#f59e0b', color: '#b45309' }}
+            >
+              <Clock size={15} />
+              <span>In Verification ({inVerificationCount})</span>
+            </button>
+          )}
           <button onClick={onOpenRegister} className="btn-gov-saffron">
             <PlusCircle size={16} />
             <span>Register New Land</span>
@@ -50,14 +62,37 @@ export default function Dashboard({
 
       {/* Metrics Grid */}
       <div className="metrics-grid">
-        <div className="metric-card">
+        <div
+          className="metric-card"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onSwitchTab('myland')}
+          title="Click to view your owned land parcels"
+        >
           <div className="metric-data">
             <h4>Land Parcels Owned</h4>
-            <div className="metric-value">{properties.length}</div>
-            <div className="metric-subtext">Registered under your BCID</div>
+            <div className="metric-value">{verifiedCount}</div>
+            <div className="metric-subtext">Legally owned titles under your BCID &rarr;</div>
           </div>
           <div className="metric-icon-box metric-icon-navy">
             <Landmark size={24} />
+          </div>
+        </div>
+
+        <div
+          className="metric-card"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onSwitchTab('verification')}
+          title="Click to track properties in verification"
+        >
+          <div className="metric-data">
+            <h4>In Verification</h4>
+            <div className="metric-value">{inVerificationCount}</div>
+            <div className="metric-subtext" style={{ color: 'var(--gov-amber-600)' }}>
+              Under Registrar cadastre & doc review &rarr;
+            </div>
+          </div>
+          <div className="metric-icon-box metric-icon-amber">
+            <Clock size={24} />
           </div>
         </div>
 
@@ -74,25 +109,17 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div className="metric-card">
-          <div className="metric-data">
-            <h4>Pending Verification</h4>
-            <div className="metric-value">{pendingCount}</div>
-            <div className="metric-subtext" style={{ color: 'var(--gov-amber-600)' }}>
-              Under Registrar document review
-            </div>
-          </div>
-          <div className="metric-icon-box metric-icon-amber">
-            <Clock size={24} />
-          </div>
-        </div>
-
-        <div className="metric-card">
+        <div
+          className="metric-card"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onSwitchTab('transfers')}
+          title="Click to view transfer requests"
+        >
           <div className="metric-data">
             <h4>Transfer Requests</h4>
             <div className="metric-value">{pendingTransfersCount}</div>
             <div className="metric-subtext" style={{ color: 'var(--saffron-600)' }}>
-              Awaiting digital verification / payment
+              Awaiting digital verification / payment &rarr;
             </div>
           </div>
           <div className="metric-icon-box metric-icon-saffron">
@@ -146,14 +173,28 @@ export default function Dashboard({
             <Landmark size={18} color="var(--gov-navy-800)" />
             <span>My Registered Land Parcels</span>
           </h3>
-          <button
-            onClick={() => onSwitchTab('myland')}
-            className="btn-gov-outline"
-            style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-          >
-            <span>View All Land Parcels</span>
-            <ArrowUpRight size={13} />
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {inVerificationCount > 0 && (
+              <button
+                onClick={() => onSwitchTab('verification')}
+                className="btn-gov-outline"
+                style={{ padding: '6px 12px', fontSize: '0.78rem', borderColor: '#f59e0b', color: '#b45309' }}
+                title="View parcels currently undergoing statutory verification"
+              >
+                <Clock size={13} />
+                <span>In Verification ({inVerificationCount})</span>
+              </button>
+            )}
+            <button
+              onClick={() => onSwitchTab('myland')}
+              className="btn-gov-outline"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+              title="View your verified owned estates"
+            >
+              <span>Owned Lands ({verifiedCount})</span>
+              <ArrowUpRight size={13} />
+            </button>
+          </div>
         </div>
 
         <div className="gov-table-wrapper">
@@ -208,15 +249,59 @@ export default function Dashboard({
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          onClick={() => onOpenTitleDeed(p)}
-                          className="btn-gov-saffron"
-                          style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                          title="View & Print Official Title Deed Certificate"
-                        >
-                          <FileCheck size={13} />
-                          <span>Deed</span>
-                        </button>
+                        {p.verificationStatus === 'VERIFIED' ? (
+                          <button
+                            onClick={() => onOpenTitleDeed(p)}
+                            className="btn-gov-saffron"
+                            style={{ padding: '4px 8px', fontSize: '0.72rem' }}
+                            title="View & Print Official Title Deed Certificate"
+                          >
+                            <FileCheck size={13} />
+                            <span>Deed</span>
+                          </button>
+                        ) : p.verificationStatus === 'REJECTED' ? (
+                          <button
+                            onClick={() => onOpenTitleDeed(p)}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '0.72rem',
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              border: '1px solid #fca5a5',
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                            title={`Registration Rejected: ${p.rejectionReason || 'Deed/Master DB mismatch'}`}
+                          >
+                            <XCircle size={12} />
+                            <span>Rejected</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onOpenTitleDeed(p)}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '0.72rem',
+                              background: '#f1f5f9',
+                              color: '#64748b',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                            title="Certificate Locked: Appears only after Government approves uploaded documents and land details."
+                          >
+                            <Lock size={12} color="#94a3b8" />
+                            <span>Locked</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => onOpenUpload(p)}
                           className="btn-gov-outline"

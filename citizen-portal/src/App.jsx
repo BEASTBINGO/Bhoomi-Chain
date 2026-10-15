@@ -4,6 +4,7 @@ import CitizenAuthPage from './components/CitizenAuthPage';
 import LoginModal from './components/LoginModal';
 import Dashboard from './components/Dashboard';
 import MyLand from './components/MyLand';
+import PropertiesInVerification from './components/PropertiesInVerification';
 import TransfersHub from './components/TransfersHub';
 import RegisterLandModal from './components/RegisterLandModal';
 import DocumentManagerModal from './components/DocumentManagerModal';
@@ -21,6 +22,7 @@ import {
   Landmark,
   ArrowRightLeft,
   FileCheck,
+  FileCheck2,
   ShieldCheck,
   Bell,
   CheckCircle2,
@@ -150,8 +152,12 @@ export default function App() {
 
   const handlePropertyCreated = (newProp) => {
     setProperties([newProp, ...properties]);
-    setActiveTab('myland');
+    setActiveTab('verification');
   };
+
+  // Verified owned properties vs properties in verification pipeline
+  const verifiedPropertiesCount = properties.filter((p) => p.verificationStatus === 'VERIFIED').length;
+  const inVerificationCount = properties.filter((p) => p.verificationStatus !== 'VERIFIED').length;
 
   // Pending transfers count for tab badge
   const pendingTransfersBadge = transfers.filter(
@@ -184,7 +190,26 @@ export default function App() {
             >
               <Landmark size={16} />
               <span>My Land & Properties</span>
-              {properties.length > 0 && <span className="tab-badge">{properties.length}</span>}
+              {verifiedPropertiesCount > 0 && <span className="tab-badge">{verifiedPropertiesCount}</span>}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('verification')}
+              className={`nav-tab-btn ${activeTab === 'verification' ? 'active' : ''}`}
+            >
+              <FileCheck2 size={16} />
+              <span>Property in Verification</span>
+              {inVerificationCount > 0 && (
+                <span
+                  className="tab-badge"
+                  style={{
+                    background: '#d97706',
+                    color: '#ffffff',
+                  }}
+                >
+                  {inVerificationCount}
+                </span>
+              )}
             </button>
 
             <button
@@ -228,6 +253,18 @@ export default function App() {
                 onOpenUpload={handleOpenUpload}
                 onOpenHistory={handleOpenHistory}
                 onOpenTitleDeed={handleOpenTitleDeed}
+                onSwitchTab={(tab) => setActiveTab(tab)}
+              />
+            )}
+
+            {activeTab === 'verification' && (
+              <PropertiesInVerification
+                properties={properties}
+                onOpenRegister={() => setIsRegisterModalOpen(true)}
+                onOpenUpload={handleOpenUpload}
+                onOpenHistory={handleOpenHistory}
+                onOpenTitleDeed={handleOpenTitleDeed}
+                onSwitchTab={(tab) => setActiveTab(tab)}
               />
             )}
 

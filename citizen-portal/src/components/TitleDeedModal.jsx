@@ -40,6 +40,9 @@ export default function TitleDeedModal({ property, citizen, isOpen, onClose }) {
   const ownerBcid = citizen?.bcid || property.owner?.bcid || 'BCID-IND-2026-000001';
   const ownerAadhaar = citizen?.aadhaarNumber || '5489 3210 1001';
 
+  const isVerified = property.verificationStatus === 'VERIFIED';
+  const isRejected = property.verificationStatus === 'REJECTED';
+
   return (
     <div
       className="deed-modal-backdrop"
@@ -97,23 +100,26 @@ export default function TitleDeedModal({ property, citizen, isOpen, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               onClick={handlePrint}
+              disabled={!isVerified}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'linear-gradient(135deg, var(--saffron-500), var(--saffron-600))',
+                background: isVerified ? 'linear-gradient(135deg, var(--saffron-500), var(--saffron-600))' : '#475569',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '6px',
                 padding: '6px 14px',
                 fontSize: '0.82rem',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isVerified ? 'pointer' : 'not-allowed',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                opacity: isVerified ? 1 : 0.6,
               }}
+              title={isVerified ? 'Print or Save Official Certificate' : 'Certificate locked until government approval'}
             >
-              <Printer size={15} />
-              <span>Print / Save as PDF</span>
+              {isVerified ? <Printer size={15} /> : <Lock size={14} />}
+              <span>{isVerified ? 'Print / Save as PDF' : 'Certificate Locked'}</span>
             </button>
 
             <button
@@ -132,7 +138,119 @@ export default function TitleDeedModal({ property, citizen, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Certificate Printable Body */}
+        {/* ─── LOCKED STATE: WHEN NOT APPROVED BY GOVERNMENT ─── */}
+        {!isVerified && (
+          <div style={{ padding: '48px 36px', textAlign: 'center', background: '#f8fafc' }}>
+            <div
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '50%',
+                background: isRejected ? '#fee2e2' : '#fef3c7',
+                border: isRejected ? '2px solid #ef4444' : '2px solid #f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px auto',
+              }}
+            >
+              {isRejected ? <Lock size={34} color="#dc2626" /> : <Lock size={34} color="#d97706" />}
+            </div>
+
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--gov-navy-950)', margin: '0 0 8px 0' }}>
+              {isRejected
+                ? 'OFFICIAL TITLE CERTIFICATE REJECTED'
+                : 'OFFICIAL PROPERTY CERTIFICATE LOCKED (PENDING GOVERNMENT APPROVAL)'}
+            </h3>
+
+            <p style={{ maxWidth: '600px', margin: '0 auto 24px auto', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+              {isRejected
+                ? 'This land title registration application was rejected by the Government Sub-Registrar during statutory cadastre and deed verification.'
+                : 'Under the Maharashtra Land Revenue Code, an official digital Form 7/12 & Sanad of Title Certificate is strictly issued ONLY AFTER the Government approves your uploaded deed documents and verifies cadastral land details in the database.'}
+            </p>
+
+            {isRejected && property.rejectionReason && (
+              <div
+                style={{
+                  maxWidth: '620px',
+                  margin: '0 auto 24px auto',
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '10px',
+                  padding: '16px 20px',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#991b1b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Statutory Rejection Cause Recorded by Registrar:
+                </div>
+                <div style={{ fontSize: '0.86rem', color: '#7f1d1d', fontWeight: 600 }}>
+                  {property.rejectionReason}
+                </div>
+              </div>
+            )}
+
+            {/* Verification Stage Timeline */}
+            <div
+              style={{
+                maxWidth: '620px',
+                margin: '0 auto 28px auto',
+                background: '#ffffff',
+                border: '1px solid var(--border-light)',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'left',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--gov-navy-900)', textTransform: 'uppercase', marginBottom: '14px' }}>
+                Civil Land Title Issuance Pipeline:
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>✓</div>
+                  <div><strong>1. Civil Parcel Registration:</strong> Survey No. {property.surveyNumber} submitted by citizen.</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>✓</div>
+                  <div><strong>2. Deed Upload & Readability Inspection:</strong> Format checked & 98% clarity verified.</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: isRejected ? '#fee2e2' : '#fef3c7', color: isRejected ? '#dc2626' : '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>
+                    {isRejected ? '✕' : '⏳'}
+                  </div>
+                  <div>
+                    <strong>3. Government Master Database & Officer Approval:</strong>{' '}
+                    <span style={{ color: isRejected ? '#dc2626' : '#d97706', fontWeight: 700 }}>
+                      {isRejected ? 'REJECTED (Mismatch/Duplication Detected)' : 'CURRENT STEP: Awaiting Registrar Approval'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>🔒</div>
+                  <div style={{ color: 'var(--text-muted)' }}>
+                    <strong>4. Digital Form 7/12 Sanad & QR Blockchain Certificate:</strong> Locked until Step 3 is Approved.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="btn-gov-navy"
+              style={{ padding: '10px 24px', fontSize: '0.86rem' }}
+            >
+              Return to Citizen Dashboard
+            </button>
+          </div>
+        )}
+
+        {/* Certificate Printable Body (Only rendered when VERIFIED) */}
+        {isVerified && (
         <div
           ref={certificateRef}
           style={{
@@ -397,6 +515,7 @@ export default function TitleDeedModal({ property, citizen, isOpen, onClose }) {
             </div>
           </div>
         </div>
+      )}
       </div>
     </div>
   );

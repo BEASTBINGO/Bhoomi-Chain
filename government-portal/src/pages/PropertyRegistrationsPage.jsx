@@ -25,6 +25,7 @@ import {
   getPropertyReviewDetails,
   verifyProperty,
   checkMasterDatabase,
+  autoCheckRegistration,
 } from '../services/api';
 
 export default function PropertyRegistrationsPage() {
@@ -39,6 +40,10 @@ export default function PropertyRegistrationsPage() {
   // Master Database Check State
   const [dbCheckLoading, setDbCheckLoading] = useState(false);
   const [dbCheckResult, setDbCheckResult] = useState(null);
+
+  // Automated Compliance Check & Auto-Reject State
+  const [autoChecking, setAutoChecking] = useState(false);
+  const [autoCheckResult, setAutoCheckResult] = useState(null);
 
   // Decision Modal State
   const [decisionModal, setDecisionModal] = useState(null); // { id, action: 'APPROVE' | 'REJECT' }
@@ -68,6 +73,8 @@ export default function PropertyRegistrationsPage() {
     setSelectedProperty(prop);
     setPropertyDetails(null);
     setDbCheckResult(null);
+    setAutoCheckResult(null);
+    setErrorMessage('');
     setDetailLoading(true);
     try {
       const res = await getPropertyReviewDetails(prop._id);
@@ -98,6 +105,29 @@ export default function PropertyRegistrationsPage() {
       console.error('Check master database error:', err);
     } finally {
       setDbCheckLoading(false);
+    }
+  };
+
+  const handleAutoCheckRegistration = async (property) => {
+    setAutoChecking(true);
+    setAutoCheckResult(null);
+    setErrorMessage('');
+    try {
+      const res = await autoCheckRegistration(property._id);
+      setAutoCheckResult(res);
+
+      if (res.autoRejected) {
+        setErrorMessage(`🚨 AUTOMATIC SYSTEM REJECTION: ${res.rejectionReason}`);
+        // Reload pending registrations to refresh queue
+        await loadPendingRegistrations();
+      } else if (res.eligibleForApproval) {
+        setSuccessMessage(`✅ 100% COMPLIANCE CONFIRMED: ${res.message}`);
+        setTimeout(() => setSuccessMessage(''), 6000);
+      }
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Automated compliance check failed.');
+    } finally {
+      setAutoChecking(false);
     }
   };
 
@@ -525,7 +555,7 @@ export default function PropertyRegistrationsPage() {
                   )}
                 </div>
 
-                {/* 3. MASTER DATABASE CROSS-CHECK BUTTON & CARD */}
+                {/* 3. MASTER DATABASE & AUTOMATED COMPLIANCE VERIFICATION */}
                 <div
                   style={{
                     background: '#f8fafc',
@@ -535,30 +565,118 @@ export default function PropertyRegistrationsPage() {
                     marginBottom: '20px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--gov-navy-950)', textTransform: 'uppercase' }}>
-                        3. Official Master Cadastre Verification
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--gov-navy-950)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Database size={16} color="var(--gov-gold)" />
+                        <span>3. Statutory Cadastre & Automated Compliance Verification</span>
                       </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        Cross-check Survey No. {selectedProperty.surveyNumber} against the 100-record State Revenue Database
+                        Cross-checks Survey No. {selectedProperty.surveyNumber} against the 100-record State Master Database. Auto-rejects mismatches, duplicates, or unverified documents.
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleCheckMasterDatabase(selectedProperty)}
-                      disabled={dbCheckLoading}
-                      className="btn-gov-navy"
-                      style={{ padding: '8px 16px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <Database size={15} color="var(--gov-gold)" />
-                      <span>{dbCheckLoading ? 'Searching Master Records…' : 'Check in Master Database'}</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleAutoCheckRegistration(selectedProperty)}
+                        disabled={autoChecking}
+                        className="btn-gov-navy"
+                        style={{
+                          background: 'linear-gradient(135deg, #0a192f, #1e3a8a)',
+                          color: '#ffffff',
+                          border: '1px solid var(--gov-gold)',
+                          padding: '8px 16px',
+                          fontSize: '0.82rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(10, 25, 47, 0.2)',
+                          fontWeight: 700,
+                        }}
+                      >
+                        <Sparkles size={14} color="var(--gov-gold)" />
+                        <span>{autoChecking ? 'Running Compliance Check…' : '⚡ Run Automated Compliance & Master DB Check'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCheckMasterDatabase(selectedProperty)}
+                        disabled={dbCheckLoading}
+                        className="btn-gov-outline"
+                        style={{ padding: '8px 12px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Search size={13} />
+                        <span>{dbCheckLoading ? 'Searching…' : 'Quick Lookup'}</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Master Database Check Response */}
-                  {dbCheckResult && (
+                  {/* Automated Compliance Inspection Result */}
+                  {autoCheckResult && (
+                    <div
+                      style={{
+                        padding: '16px',
+                        borderRadius: '10px',
+                        background: autoCheckResult.autoRejected ? '#fef2f2' : '#f0fdf4',
+                        border: autoCheckResult.autoRejected ? '2px solid #ef4444' : '2px solid #22c55e',
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        {autoCheckResult.autoRejected ? (
+                          <XCircle size={22} color="#dc2626" />
+                        ) : (
+                          <CheckCircle2 size={22} color="#16a34a" />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: autoCheckResult.autoRejected ? '#991b1b' : '#14532d' }}>
+                            {autoCheckResult.autoRejected
+                              ? '🚨 AUTOMATIC SYSTEM REJECTION TRIGGERED'
+                              : '✅ 100% STATUTORY COMPLIANCE CONFIRMED'}
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: autoCheckResult.autoRejected ? '#b91c1c' : '#15803d' }}>
+                            {autoCheckResult.autoRejected
+                              ? `Application automatically rejected by governance engine (${autoCheckResult.failureCategory}). Marked as REJECTED in database.`
+                              : 'All 3 statutory tests passed. Cleared for Sub-Registrar approval.'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600, color: autoCheckResult.autoRejected ? '#7f1d1d' : '#166534', margin: '8px 0', padding: '8px 12px', background: autoCheckResult.autoRejected ? '#fee2e2' : '#dcfce7', borderRadius: '6px' }}>
+                        {autoCheckResult.rejectionReason || autoCheckResult.message}
+                      </div>
+
+                      {/* 3-Point Check Matrix */}
+                      {autoCheckResult.checks && (
+                        <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '0.75rem' }}>
+                          <div style={{ padding: '8px', borderRadius: '6px', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--gov-navy-950)' }}>1. Master Cadastre:</div>
+                            <div style={{ color: autoCheckResult.checks.masterDatabase?.status === 'PASSED' ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                              {autoCheckResult.checks.masterDatabase?.status === 'PASSED' ? '✓ MATCH CONFIRMED' : '✕ FAILED / MISMATCH'}
+                            </div>
+                          </div>
+
+                          <div style={{ padding: '8px', borderRadius: '6px', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--gov-navy-950)' }}>2. Title Duplication:</div>
+                            <div style={{ color: autoCheckResult.checks.duplication?.status === 'PASSED' ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                              {autoCheckResult.checks.duplication?.status === 'PASSED' ? '✓ ZERO DUPLICATION' : '✕ DUPLICATE TITLE DETECTED'}
+                            </div>
+                          </div>
+
+                          <div style={{ padding: '8px', borderRadius: '6px', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--gov-navy-950)' }}>3. Deed Format & Readability:</div>
+                            <div style={{ color: autoCheckResult.checks.documentVerification?.status === 'PASSED' ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                              {autoCheckResult.checks.documentVerification?.status === 'PASSED' ? '✓ VERIFIED (98% READABILITY)' : '✕ UNVERIFIED / MISSING'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Manual Quick Search Response (if run) */}
+                  {!autoCheckResult && dbCheckResult && (
                     <div
                       style={{
                         padding: '14px',
@@ -587,25 +705,59 @@ export default function PropertyRegistrationsPage() {
 
                 {/* 4. Registrar Final Verification Actions */}
                 <div style={{ display: 'flex', gap: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-light)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setDecisionModal({ id: selectedProperty._id, action: 'APPROVE' })}
-                    className="btn-gov-success"
-                    style={{ flex: 1, padding: '12px', fontSize: '0.9rem', justifyContent: 'center' }}
-                  >
-                    <CheckCircle2 size={18} />
-                    <span>Approve Property & Add to Citizen Dashboard</span>
-                  </button>
+                  {autoCheckResult?.autoRejected ? (
+                    <button
+                      type="button"
+                      disabled
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '0.88rem',
+                        justifyContent: 'center',
+                        background: '#fee2e2',
+                        color: '#991b1b',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'not-allowed',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <XCircle size={18} color="#dc2626" />
+                      <span>Application Auto-Rejected (Cannot Approve)</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setDecisionModal({ id: selectedProperty._id, action: 'APPROVE' })}
+                      className="btn-gov-success"
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '0.9rem',
+                        justifyContent: 'center',
+                        boxShadow: autoCheckResult?.eligibleForApproval ? '0 0 14px rgba(34, 197, 94, 0.4)' : 'none',
+                        border: autoCheckResult?.eligibleForApproval ? '2px solid #16a34a' : 'none',
+                      }}
+                    >
+                      <CheckCircle2 size={18} />
+                      <span>{autoCheckResult?.eligibleForApproval ? '✅ Certified Compliant: Approve & Issue Digital Title' : 'Approve Property & Add to Citizen Dashboard'}</span>
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => setDecisionModal({ id: selectedProperty._id, action: 'REJECT' })}
-                    className="btn-gov-danger"
-                    style={{ padding: '12px 20px', fontSize: '0.9rem' }}
-                  >
-                    <XCircle size={18} />
-                    <span>Reject</span>
-                  </button>
+                  {!autoCheckResult?.autoRejected && (
+                    <button
+                      type="button"
+                      onClick={() => setDecisionModal({ id: selectedProperty._id, action: 'REJECT' })}
+                      className="btn-gov-danger"
+                      style={{ padding: '12px 20px', fontSize: '0.9rem' }}
+                    >
+                      <XCircle size={18} />
+                      <span>Manual Reject</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -54,6 +54,16 @@ const propertySchema = new mongoose.Schema(
       default: "PENDING",
     },
 
+    rejectionReason: String,
+    verificationDate: Date,
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    complianceChecks: {
+      type: Object,
+    },
+
     status: {
       type: String,
       enum: ["ACTIVE", "TRANSFER_PENDING", "INACTIVE"],

@@ -57,6 +57,26 @@ const propertyDocumentSchema = new mongoose.Schema(
       max: 100,
     },
 
+    readabilityStatus: {
+      type: String,
+      enum: ["PASS", "FAIL", "WARNING"],
+      default: "PASS",
+    },
+
+    readabilityScore: {
+      type: Number,
+      default: 98,
+    },
+
+    formatValid: {
+      type: Boolean,
+      default: true,
+    },
+
+    fileHash: String,
+    fileSize: Number,
+    mimeType: String,
+
     governmentStatus: {
       type: String,
       enum: ["PENDING", "VERIFIED", "REJECTED"],

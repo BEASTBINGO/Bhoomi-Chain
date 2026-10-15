@@ -10,41 +10,86 @@ import {
   AlertCircle,
   PlusCircle,
   FileCheck,
+  Lock,
+  XCircle,
 } from 'lucide-react';
 
-export default function MyLand({ properties, onOpenRegister, onOpenUpload, onOpenHistory, onOpenTitleDeed }) {
+export default function MyLand({ properties, onOpenRegister, onOpenUpload, onOpenHistory, onOpenTitleDeed, onSwitchTab }) {
+  // Only show lands which user owns (officially verified by Government)
+  const ownedProperties = properties.filter((p) => p.verificationStatus === 'VERIFIED');
+  const pendingCount = properties.filter((p) => p.verificationStatus !== 'VERIFIED').length;
+
   return (
     <div>
       <div className="page-intro-header">
         <div>
-          <h2>My Land Parcels & Registered Estates</h2>
-          <p>Official digital records of real estate titles registered under your BCID</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2>My Land Parcels & Registered Estates</h2>
+            <span
+              style={{
+                background: '#dcfce7',
+                color: '#15803d',
+                border: '1px solid #86efac',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: '12px',
+              }}
+            >
+              Officially Owned Titles
+            </span>
+          </div>
+          <p>Official legal records of real estate titles owned by your BCID and sealed in the blockchain ledger</p>
         </div>
-        <button onClick={onOpenRegister} className="btn-gov-saffron">
-          <PlusCircle size={16} />
-          <span>Add New Land Parcel</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {pendingCount > 0 && onSwitchTab && (
+            <button
+              onClick={() => onSwitchTab('verification')}
+              className="btn-gov-outline"
+              style={{ fontSize: '0.82rem' }}
+            >
+              <span>Track In-Verification Parcels ({pendingCount}) &rarr;</span>
+            </button>
+          )}
+          <button onClick={onOpenRegister} className="btn-gov-saffron">
+            <PlusCircle size={16} />
+            <span>Add New Land Parcel</span>
+          </button>
+        </div>
       </div>
 
-      {properties.length === 0 ? (
+      {ownedProperties.length === 0 ? (
         <div className="content-card">
-          <div className="card-body" style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <div className="gov-emblem-badge" style={{ margin: '0 auto 16px auto', width: '56px', height: '56px' }}>
-              <Landmark size={28} />
+          <div className="card-body" style={{ textAlign: 'center', padding: '56px 24px' }}>
+            <div className="gov-emblem-badge" style={{ margin: '0 auto 16px auto', width: '60px', height: '60px' }}>
+              <Landmark size={30} />
             </div>
-            <h3 style={{ fontSize: '1.2rem', color: 'var(--gov-navy-900)' }}>No Properties Found</h3>
-            <p style={{ color: 'var(--text-muted)', maxWidth: '420px', margin: '8px auto 20px auto', fontSize: '0.875rem' }}>
-              You currently do not have any land parcels registered under your account. Click below to initiate registration.
+            <h3 style={{ fontSize: '1.25rem', color: 'var(--gov-navy-900)', margin: '0 0 8px 0' }}>
+              No Verified Owned Lands Yet
+            </h3>
+            <p style={{ color: 'var(--text-muted)', maxWidth: '480px', margin: '0 auto 24px auto', fontSize: '0.875rem', lineHeight: '1.6' }}>
+              This tab displays exclusively the land titles that you legally own with Government Registrar approval.
+              {pendingCount > 0
+                ? ` You currently have ${pendingCount} land parcel(s) undergoing statutory verification in the "Property in Verification" tab.`
+                : ' Click below to register your first land parcel and submit it for cadastral verification.'}
             </p>
-            <button onClick={onOpenRegister} className="btn-gov-saffron">
-              <PlusCircle size={16} />
-              <span>Register First Property</span>
-            </button>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {pendingCount > 0 && onSwitchTab && (
+                <button onClick={() => onSwitchTab('verification')} className="btn-gov-navy">
+                  <Clock size={16} />
+                  <span>View Properties in Verification ({pendingCount})</span>
+                </button>
+              )}
+              <button onClick={onOpenRegister} className="btn-gov-saffron">
+                <PlusCircle size={16} />
+                <span>Register New Land Parcel</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
-          {properties.map((p) => (
+          {ownedProperties.map((p) => (
             <div key={p._id} className="content-card" style={{ marginBottom: 0 }}>
               <div className="card-header">
                 <div>
@@ -101,15 +146,61 @@ export default function MyLand({ properties, onOpenRegister, onOpenUpload, onOpe
 
                 {/* Card Actions */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '18px', paddingTop: '14px', borderTop: '1px solid var(--border-light)' }}>
-                  <button
-                    onClick={() => onOpenTitleDeed(p)}
-                    className="btn-gov-saffron"
-                    style={{ justifyContent: 'center', fontSize: '0.76rem', padding: '7px 8px' }}
-                    title="View and print official Form 7/12 & Title Sanad Certificate"
-                  >
-                    <FileCheck size={14} />
-                    <span>Title Deed</span>
-                  </button>
+                  {p.verificationStatus === 'VERIFIED' ? (
+                    <button
+                      onClick={() => onOpenTitleDeed(p)}
+                      className="btn-gov-saffron"
+                      style={{ justifyContent: 'center', fontSize: '0.76rem', padding: '7px 8px' }}
+                      title="View and print official Form 7/12 & Title Sanad Certificate"
+                    >
+                      <FileCheck size={14} />
+                      <span>Title Deed</span>
+                    </button>
+                  ) : p.verificationStatus === 'REJECTED' ? (
+                    <button
+                      onClick={() => onOpenTitleDeed(p)}
+                      style={{
+                        justifyContent: 'center',
+                        fontSize: '0.72rem',
+                        padding: '7px 6px',
+                        background: '#fee2e2',
+                        color: '#b91c1c',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                      title={`Application Rejected: ${p.rejectionReason || 'Deed/Master DB mismatch'}`}
+                    >
+                      <XCircle size={13} />
+                      <span>Rejected</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onOpenTitleDeed(p)}
+                      style={{
+                        justifyContent: 'center',
+                        fontSize: '0.72rem',
+                        padding: '7px 6px',
+                        background: '#f1f5f9',
+                        color: '#64748b',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                      title="Certificate Locked: Will appear only after Government approves uploaded documents and land details."
+                    >
+                      <Lock size={13} color="#94a3b8" />
+                      <span>Cert. Locked</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => onOpenUpload(p)}
                     className="btn-gov-primary"
