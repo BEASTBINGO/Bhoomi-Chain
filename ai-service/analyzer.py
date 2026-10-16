@@ -147,6 +147,12 @@ def parse_document_fields(text):
                 data["district"] = d
                 break
 
+    if data["propertyType"]:
+        data["propertyType"] = next(
+            (line.strip() for line in data["propertyType"].splitlines() if line.strip()),
+            None,
+        )
+
     return data
 
 
